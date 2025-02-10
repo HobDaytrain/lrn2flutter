@@ -207,7 +207,3 @@ class BigCard extends StatelessWidget {
     );
   }
 }
-
-
-// TODO: https://codelabs.developers.google.com/codelabs/flutter-codelab-first#7
-// Video: https://youtu.be/8sAyPDLorek
