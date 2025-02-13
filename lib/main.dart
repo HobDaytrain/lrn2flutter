@@ -14,31 +14,53 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => GeneralAppState(),
-      child: Consumer<GeneralAppState>(
-        builder: (context, appState, child) {
-          return MaterialApp(
-            title: 'lrn2flutter',
-            theme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.green,
-                brightness: appState.isDarkMode ? Brightness.dark : Brightness.light,
-              ),
-              visualDensity: VisualDensity.comfortable,
-              textTheme: TextTheme(
-                headlineMedium: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+      child: ChangeNotifierProvider<FavoritesState>(
+        create: (context) => FavoritesState(),
+        child: Consumer<GeneralAppState>(
+          builder: (context, appState, child) {
+            return MaterialApp(
+              title: 'lrn2flutter',
+              theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: Colors.green,
+                  brightness: appState.isDarkMode ? Brightness.dark : Brightness.light,
                 ),
-                bodyLarge: TextStyle(fontSize: 18),
-                bodyMedium: TextStyle(fontSize: 16),
+                visualDensity: VisualDensity.comfortable,
+                textTheme: TextTheme(
+                  headlineMedium: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  bodyLarge: TextStyle(fontSize: 18),
+                  bodyMedium: TextStyle(fontSize: 16),
+                ),
               ),
-            ),
-            home: AppShell(),
-          );
-        },
+              home: AppShell(),
+            );
+          }, 
+        ),
       ),
     );
+  }
+}
+
+class FavoritesState extends ChangeNotifier {
+  var current = WordPair.random();
+  var favorites = <WordPair>[];
+
+  void toggleFavorite() {
+    if (favorites.contains(current)) {
+      favorites.remove(current);
+    } else {
+      favorites.add(current);
+    }
+    notifyListeners();
+  }
+
+  void getNext() {
+    current = WordPair.random();
+    notifyListeners();
   }
 }
 
@@ -243,7 +265,7 @@ class WeatherPage extends StatelessWidget {
 class GeneratorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<GeneralAppState>();
+    var appState = context.watch<FavoritesState>();
     var pair = appState.current;
 
     IconData icon;
@@ -287,7 +309,7 @@ class GeneratorPage extends StatelessWidget {
 class FavoritesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<GeneralAppState>();
+    var appState = context.watch<FavoritesState>();
 
     if (appState.favorites.isEmpty) {
       return Center(
