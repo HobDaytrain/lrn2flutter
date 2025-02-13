@@ -13,13 +13,29 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => MyAppState(),
-      child: MaterialApp(
-        title: 'Namer App',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        ),
-        home: MyHomePage(),
+      child: Consumer<MyAppState>(
+        builder: (context, appState, child) {
+          return MaterialApp(
+            title: 'lrn2flutter',
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.green,
+                brightness: appState.isDarkMode ? Brightness.dark : Brightness.light,
+              ),
+              visualDensity: VisualDensity.comfortable,
+              textTheme: TextTheme(
+                headlineMedium: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+                bodyLarge: TextStyle(fontSize: 18),
+                bodyMedium: TextStyle(fontSize: 16),
+              ),
+            ),
+            home: AppShell(),
+          );
+        },
       ),
     );
   }
@@ -27,12 +43,7 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
-  
-  void getNext() {
-    current = WordPair.random();
-    notifyListeners();
-  }
-  
+  var isDarkMode = true;  
   var favorites = <WordPair>[];
   
   void toggleFavorite() {
@@ -43,29 +54,39 @@ class MyAppState extends ChangeNotifier {
     }
     notifyListeners();
   }
+  
+  void getNext() {
+    current = WordPair.random();
+    notifyListeners();
+  }
+  
+  void toggleTheme() {
+    isDarkMode = !isDarkMode;
+    notifyListeners();
+  }
 }
 
-class MyHomePage extends StatefulWidget {
+class AppShell extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<AppShell> createState() => _AppShellState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _AppShellState extends State<AppShell> {
   var selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    Widget page;
-    switch (selectedIndex) {
-      case 0:
-        page = GeneratorPage();
-        break;
-      case 1:
-        page = FavoritesPage();
-        break;
-      default:
-        throw UnimplementedError('no widget for $selectedIndex');
+    var destinations = <Widget Function()>[
+      () => HomePage(),
+      () => GeneratorPage(),
+      () => FavoritesPage(),
+    ];
+
+    if (selectedIndex >= destinations.length) {
+      throw UnimplementedError('no widget for $selectedIndex');
     }
+
+    Widget page = destinations[selectedIndex]();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -81,16 +102,32 @@ class _MyHomePageState extends State<MyHomePage> {
                       label: Text('Home'),
                     ),
                     NavigationRailDestination(
+                      icon: Icon(Icons.generating_tokens),
+                      label: Text('Generator'),
+                    ),
+                    NavigationRailDestination(
                       icon: Icon(Icons.favorite),
                       label: Text('Favorites'),
                     ),
                   ],
-                  selectedIndex: selectedIndex, 
+                  selectedIndex: selectedIndex,
                   onDestinationSelected: (value) {
                     setState(() {
                       selectedIndex = value;
                     });
                   },
+                  trailing: Consumer<MyAppState>(
+                    builder: (context, appState, child) {
+                      return IconButton(
+                        icon: Icon(
+                          appState.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                        ),
+                        onPressed: () {
+                          appState.toggleTheme();
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
               Expanded(
@@ -102,7 +139,19 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
         );
-      }
+      },
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'Welcome to lrn2flutter!',
+        style: Theme.of(context).textTheme.headlineMedium,
+      ),
     );
   }
 }
