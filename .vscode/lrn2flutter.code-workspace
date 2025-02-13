@@ -5,6 +5,9 @@
 		}
 	],
 	"settings": {
-		"dart.showTodos": false
+		"dart.showTodos": false,
+		"cSpell.words": [
+			"geolocator"
+		]
 	}
 }

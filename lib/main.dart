@@ -1,6 +1,7 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 
 void main() {
   runApp(MyApp());
@@ -12,8 +13,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => MyAppState(),
-      child: Consumer<MyAppState>(
+      create: (context) => GeneralAppState(),
+      child: Consumer<GeneralAppState>(
         builder: (context, appState, child) {
           return MaterialApp(
             title: 'lrn2flutter',
@@ -41,11 +42,44 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyAppState extends ChangeNotifier {
+class GeneralAppState extends ChangeNotifier {
   var current = WordPair.random();
   var isDarkMode = true;  
   var favorites = <WordPair>[];
+  var coords = <String, double>{};
   
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error('Location permissions are permanently denied');
+    }
+
+    Position position = await Geolocator.getCurrentPosition();
+    
+    return position;
+  }
+
+  void updateCoords() async {
+    var position = await _determinePosition();
+    coords = {
+      'latitude': position.latitude,
+      'longitude': position.longitude,
+    };
+    notifyListeners();
+  }
+
   void toggleFavorite() {
     if (favorites.contains(current)) {
       favorites.remove(current);
@@ -78,6 +112,7 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     var destinations = <Widget Function()>[
       () => HomePage(),
+      // () => WeatherPage(),
       () => GeneratorPage(),
       () => FavoritesPage(),
     ];
@@ -101,12 +136,16 @@ class _AppShellState extends State<AppShell> {
                       icon: Icon(Icons.home),
                       label: Text('Home'),
                     ),
+                    // NavigationRailDestination(
+                    //   icon: Icon(Icons.cloud),
+                    //   label: Text('Weather'),
+                    // ),
                     NavigationRailDestination(
                       icon: Icon(Icons.generating_tokens),
                       label: Text('Generator'),
                     ),
                     NavigationRailDestination(
-                      icon: Consumer<MyAppState>(
+                      icon: Consumer<GeneralAppState>(
                         builder: (context, appState, child) {
                           if (appState.favorites.isEmpty) {
                             return Icon(Icons.favorite);
@@ -127,7 +166,7 @@ class _AppShellState extends State<AppShell> {
                       selectedIndex = value;
                     });
                   },
-                  trailing: Consumer<MyAppState>(
+                  trailing: Consumer<GeneralAppState>(
                     builder: (context, appState, child) {
                       return IconButton(
                         icon: Icon(
@@ -167,10 +206,44 @@ class HomePage extends StatelessWidget {
   }
 }
 
+class WeatherPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<GeneralAppState>();
+    appState.updateCoords();
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Welcome to US Weather!',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            ],
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                appState.coords.toString(),
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class GeneratorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<GeneralAppState>();
     var pair = appState.current;
 
     IconData icon;
@@ -214,7 +287,7 @@ class GeneratorPage extends StatelessWidget {
 class FavoritesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    var appState = context.watch<GeneralAppState>();
 
     if (appState.favorites.isEmpty) {
       return Center(
