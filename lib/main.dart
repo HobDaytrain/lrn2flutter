@@ -1,6 +1,7 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/material.dart' show Brightness;
 
 void main() {
   runApp(MyApp());
@@ -106,7 +107,18 @@ class _AppShellState extends State<AppShell> {
                       label: Text('Generator'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.favorite),
+                      icon: Consumer<MyAppState>(
+                        builder: (context, appState, child) {
+                          if (appState.favorites.isEmpty) {
+                            return Icon(Icons.favorite);
+                          }
+                          return Badge(
+                            backgroundColor: Theme.of(context).colorScheme.secondary,
+                            label: Text(appState.favorites.length.toString()),
+                            child: Icon(Icons.favorite),
+                          );
+                        }
+                      ),
                       label: Text('Favorites'),
                     ),
                   ],
