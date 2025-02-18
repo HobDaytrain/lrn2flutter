@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 // import 'weather.dart';
 import 'favorites.dart';
+import 'home.dart';
 
 void main() {
   runApp(MyApp());
