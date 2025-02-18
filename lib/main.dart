@@ -2,6 +2,8 @@ import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+// import 'weather.dart';
+import 'favorites.dart';
 
 void main() {
   runApp(MyApp());
@@ -24,7 +26,8 @@ class MyApp extends StatelessWidget {
                 useMaterial3: true,
                 colorScheme: ColorScheme.fromSeed(
                   seedColor: Colors.green,
-                  brightness: appState.isDarkMode ? Brightness.dark : Brightness.light,
+                  brightness:
+                      appState.isDarkMode ? Brightness.dark : Brightness.light,
                 ),
                 visualDensity: VisualDensity.comfortable,
                 textTheme: TextTheme(
@@ -38,38 +41,19 @@ class MyApp extends StatelessWidget {
               ),
               home: AppShell(),
             );
-          }, 
+          },
         ),
       ),
     );
   }
 }
 
-class FavoritesState extends ChangeNotifier {
-  var current = WordPair.random();
-  var favorites = <WordPair>[];
-
-  void toggleFavorite() {
-    if (favorites.contains(current)) {
-      favorites.remove(current);
-    } else {
-      favorites.add(current);
-    }
-    notifyListeners();
-  }
-
-  void getNext() {
-    current = WordPair.random();
-    notifyListeners();
-  }
-}
-
 class GeneralAppState extends ChangeNotifier {
   var current = WordPair.random();
-  var isDarkMode = true;  
+  var isDarkMode = true;
   var favorites = <WordPair>[];
   var coords = <String, double>{};
-  
+
   Future<Position> _determinePosition() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -89,7 +73,7 @@ class GeneralAppState extends ChangeNotifier {
     }
 
     Position position = await Geolocator.getCurrentPosition();
-    
+
     return position;
   }
 
@@ -110,12 +94,12 @@ class GeneralAppState extends ChangeNotifier {
     }
     notifyListeners();
   }
-  
+
   void getNext() {
     current = WordPair.random();
     notifyListeners();
   }
-  
+
   void toggleTheme() {
     isDarkMode = !isDarkMode;
     notifyListeners();
@@ -168,17 +152,17 @@ class _AppShellState extends State<AppShell> {
                     ),
                     NavigationRailDestination(
                       icon: Consumer<GeneralAppState>(
-                        builder: (context, appState, child) {
-                          if (appState.favorites.isEmpty) {
-                            return Icon(Icons.favorite);
-                          }
-                          return Badge(
-                            backgroundColor: Theme.of(context).colorScheme.secondary,
-                            label: Text(appState.favorites.length.toString()),
-                            child: Icon(Icons.favorite),
-                          );
+                          builder: (context, appState, child) {
+                        if (appState.favorites.isEmpty) {
+                          return Icon(Icons.favorite);
                         }
-                      ),
+                        return Badge(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.secondary,
+                          label: Text(appState.favorites.length.toString()),
+                          child: Icon(Icons.favorite),
+                        );
+                      }),
                       label: Text('Favorites'),
                     ),
                   ],
@@ -192,7 +176,9 @@ class _AppShellState extends State<AppShell> {
                     builder: (context, appState, child) {
                       return IconButton(
                         icon: Icon(
-                          appState.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                          appState.isDarkMode
+                              ? Icons.light_mode
+                              : Icons.dark_mode,
                         ),
                         onPressed: () {
                           appState.toggleTheme();
@@ -212,153 +198,6 @@ class _AppShellState extends State<AppShell> {
           ),
         );
       },
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Welcome to lrn2flutter!',
-        style: Theme.of(context).textTheme.headlineMedium,
-      ),
-    );
-  }
-}
-
-class WeatherPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    var appState = context.watch<GeneralAppState>();
-    appState.updateCoords();
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Welcome to US Weather!',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ],
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                appState.coords.toString(),
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class GeneratorPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    var appState = context.watch<FavoritesState>();
-    var pair = appState.current;
-
-    IconData icon;
-    if (appState.favorites.contains(pair)) {
-      icon = Icons.favorite;
-    } else {
-      icon = Icons.favorite_border;
-    }
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          BigCard(pair: pair),
-          SizedBox(height: 10),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  appState.toggleFavorite();
-                },
-                icon: Icon(icon),
-                label: Text('Like'),
-              ),
-              SizedBox(width: 10),
-              ElevatedButton(
-                onPressed: () {
-                  appState.getNext();
-                },
-                child: Text('Next'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class FavoritesPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    var appState = context.watch<FavoritesState>();
-
-    if (appState.favorites.isEmpty) {
-      return Center(
-        child: Text('No favorites yet.'),
-      );
-    }
-
-    return ListView(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Text('You have '
-              '${appState.favorites.length} favorites:'),
-        ),
-        for (var pair in appState.favorites)
-          ListTile(
-            leading: Icon(Icons.favorite),
-            title: Text(pair.asLowerCase),
-          ),
-      ],
-    );
-  }
-}
-
-class BigCard extends StatelessWidget {
-  const BigCard({
-    super.key,
-    required this.pair,
-  });
-
-  final WordPair pair;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = theme.textTheme.displayMedium!.copyWith(
-      color: theme.colorScheme.onPrimary,
-    );
-
-    return Card(
-      color: theme.colorScheme.primary,
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Text(
-          pair.asLowerCase, 
-          style: style,
-          semanticsLabel: "${pair.first} ${pair.second}",
-        ),
-      ),
     );
   }
 }
